@@ -1,11 +1,27 @@
 #lang racket
 
-(require rackunit)
+;; create a logger called fooabc:
+(define-logger fooabc)
 
-(define (is-positive num)
-  (if (> num 0) #t
-      #f))
+;; create a listener that is interested in all
+;; messages on the fooabc logger with topic 'debug or higher
+(define log-receiver
+  (make-log-receiver fooabc-logger 'debug))
 
-(check-equal? (is-positive 5) #t)
-(check-equal? (is-positive -1) #f)
-  
+
+;; start a thread to print out messages that are recieved
+(thread
+ (λ ()
+   ;; run infinitely:
+   (let loop ()
+     ;; block until a message is received:
+     (define message
+       (sync log-receiver))
+     ;; print out the message:
+     (printf "got a message! It said: ~e\n" message)
+     ;; continue waiting:
+     (loop))))
+
+;; let's send some log messages:
+(log-fooabc-debug "hello1")
+(log-fooabc-debug "hello2")

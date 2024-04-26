@@ -3,6 +3,7 @@
 (require syntax/parse
          mutate
          mutate/traversal
+         mutate/logger
          "./read-module.rkt"
          )
 
@@ -31,6 +32,11 @@
 (define (get-mutants p)
   (stx->mutants (read-module p)))
 
+;; create a listener that is interested in all
+;; messages on the fooabc logger with topic 'debug or higher
+(define log-receiver
+  (make-log-receiver mutate-logger 'debug))
+
 (define score
   (for/fold ([failure 0]
              [total 0]
@@ -44,6 +50,9 @@
       (system* (find-executable-path "raco")
                "test"
                temp))
+    (define message
+       (sync log-receiver))
+    (printf "Mutator used: ~e\n" message)
     (delete-file temp)
     (values (+ failure (if tests-pass? 0 1))
             (add1 total))))
