@@ -50,12 +50,21 @@
       (system* (find-executable-path "raco")
                "test"
                temp))
-    (define message
-       (sync log-receiver))
-    (printf "Mutator used: ~e\n" message)
     (delete-file temp)
     (values (+ failure (if tests-pass? 0 1))
             (add1 total))))
 
 
-  (displayln (~a "\n\nMutation score: " (~r score)))
+(displayln (~a "\n\nMutation score: " (~r score)))
+
+(thread
+ (λ ()
+   ;; run infinitely:
+   (let loop ()
+     ;; block until a message is received:
+     (define message
+       (sync log-receiver))
+     ;; print out the message:
+     (printf "\n\nMutator used: ~e" message)
+     ;; continue waiting:
+     (loop))))
