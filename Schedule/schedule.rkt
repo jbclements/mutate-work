@@ -37,6 +37,7 @@
        dates
        (vector->list schedule)))
 
+(random-seed 12342243)
 (module+ test
   (require rackunit)
   (check-equal? (schedule '() '(A) (hash))

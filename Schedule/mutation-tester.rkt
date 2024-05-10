@@ -41,11 +41,15 @@
   (for/fold ([failure 0]
              [total 0]
              #:result (/ failure total))
-            ([mutant-stx (get-mutants "triangle.rkt")])
+            ([mutant-stx (get-mutants "schedule.rkt")])
     (define temp (make-temporary-file  "mutant-~a"))
     (write-to-file (syntax->datum mutant-stx)
                    temp
                    #:exists 'replace)
+    (define message
+       (sync log-receiver))
+     ;; print out the message:
+     (printf "\n\nMutator used: ~e\n" message)
     (define tests-pass?
       (system* (find-executable-path "raco")
                "test"
@@ -57,7 +61,7 @@
 
 (displayln (~a "\n\nMutation score: " (~r score)))
 
-(thread
+#;(thread
  (λ ()
    ;; run infinitely:
    (let loop ()
@@ -67,4 +71,4 @@
      ;; print out the message:
      (printf "\n\nMutator used: ~e" message)
      ;; continue waiting:
-     (loop))))
+     (loop))));#
