@@ -41,7 +41,7 @@
   (for/fold ([failure 0]
              [total 0]
              #:result (/ failure total))
-            ([mutant-stx (get-mutants "Asgn8.rkt")])
+            ([mutant-stx (get-mutants "430Asgn/Asgn3.rkt")])
     (define temp (make-temporary-file  "mutant-~a"))
     (write-to-file (syntax->datum mutant-stx)
                    temp
