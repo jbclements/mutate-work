@@ -1,0 +1,58 @@
+Can be caught:
+1.   (define-simple-mutator (div-swap stx)
+     #:pattern ({~datum /} e1 e2)
+     #' (/ e2 e1))
+Code: (/ (check-if-num (interp l env)) (check-if-num (interp r env)))]
+Code: (/ leftNum rightNum)
+Code: (/ (NumV-n (numV-check (interp (first arg) env)))
+                                  (NumV-n (numV-check (interp(second arg) env))))
+
+2. and -> or
+Code: [(and (real? a-interp) (real? b-interp)) (+ (cast (interp a env) Real) (cast (interp b env) Real))]
+Code: [(and (real? a-interp) (real? b-interp)) (- (cast (interp a env) Real) (cast (interp b env) Real))]
+Code: [(and (real? a-interp) (real? b-interp)) (* (cast (interp a env) Real) (cast (interp b env) Real))]
+Code: (and (= (length args-to-values) 2) (equal? s 'equal?))
+Code: (and (false? (member f '(if in => var))) (not (real? f)))
+
+3./ -> *
+Code: ['/
+        (match args
+          [(list a b)
+           (define a-interp (interp a env))
+           (define b-interp (interp b env))
+           (cond
+             [(and (real? a-interp) (real? b-interp))
+              (cond
+                [(equal? b-interp 0) (error 'interp "JILI: divide by zero error")]
+                [else (/ a-interp b-interp)])]
+             [else (error 'interp "JILI: invalid args")])]
+          [other (error 'interp "JILI: incorrect number of arguments for /?")])]
+Code: (TyBinding '/ (FuncT (list (NumT) (NumT)) (NumT)))
+
+4. <= -> <
+Code: (BoolV (<= num1 num2))
+Code: [(<= leftNum rightNum) #t]
+Code: (<= (NumV-n l) (NumV-n r))
+Code: (<= (NumV-n (numV-check (interp (first arg) env)))
+                             (NumV-n (numV-check (interp (second arg) env))))
+Code: ['<= (if (not (and (real? l) (real? r)))
+             (error 'JYSS "args must both be real") (<= l r))]
+
+5. / -> modulo
+Code: (TyBinding '/ (FuncT (list (NumT) (NumT)) (NumT)))
+
+6. < -> <=
+Code: (or (< n1 0) (< (string-length s) (+ n2 1)) (> n1 n2))
+
+7. > -> >=
+Code: (or (< n1 0) (< (string-length s) (+ n2 1)) (> n1 n2))
+
+
+
+Cannot be caught:
+1. < -> <=
+Code: (or (< (cast (interp a env) Real) (cast (interp b env) Real)) (= (cast (interp a env) Real) (cast (interp b env) Real)))
+
+2.(define-constant-mutator (constant-swap v)
+     [(? number?) #:-> (- v)])
+Code: (define err-exp (appC (idC 'hehehe) (list (numC 555) (numC 2))))
