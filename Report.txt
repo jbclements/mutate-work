@@ -2,17 +2,60 @@ Can be caught:
 1.   (define-simple-mutator (div-swap stx)
      #:pattern ({~datum /} e1 e2)
      #' (/ e2 e1))
-Code: (/ (check-if-num (interp l env)) (check-if-num (interp r env)))]
-Code: (/ leftNum rightNum)
+Code: (/ (check-if-num (interp l env)) (check-if-num (interp r env)))] -- t1
+test cases:
+1. (check-equal? (top-interp '{{f a b => {f a b}} {a b => {/ a b}} 4 4}) "1")
+
+Code: (/ leftNum rightNum) -- t4
+test cases:
+1. (check-equal? (interp (appC (idC '/) (list (numC 2) (numC 2))) topEnv) (numV 1))
+
 Code: (/ (NumV-n (numV-check (interp (first arg) env)))
-                                  (NumV-n (numV-check (interp(second arg) env))))
+                                  (NumV-n (numV-check (interp(second arg) env)))) -- t6
+test cases:
+1. (check-equal? (interp (AppC (IdC '/) (list (NumC 4)(NumC 4))) top-level) (NumV 1))
 
 2. and -> or
-Code: [(and (real? a-interp) (real? b-interp)) (+ (cast (interp a env) Real) (cast (interp b env) Real))]
-Code: [(and (real? a-interp) (real? b-interp)) (- (cast (interp a env) Real) (cast (interp b env) Real))]
-Code: [(and (real? a-interp) (real? b-interp)) (* (cast (interp a env) Real) (cast (interp b env) Real))]
-Code: (and (= (length args-to-values) 2) (equal? s 'equal?))
-Code: (and (false? (member f '(if in => var))) (not (real? f)))
+Code: [(and (real? a-interp) (real? b-interp)) (+ (cast (interp a env) Real) (cast (interp b env) Real))] -- t2
+test cases:
+1. (check-equal? (interp (AppC (IdC '+) (list (NumC 3) (NumC 5))) top-env) 8)
+
+Code: [(and (real? a-interp) (real? b-interp)) (- (cast (interp a env) Real) (cast (interp b env) Real))] -- t2
+test cases:
+1.
+(define simp-fun '(var {[simp = {simp2 x => {if {equal? x 0} 0 {simp2 simp2 {- x 1}}}}]}
+                       in
+                       {simp simp 1}))
+(check-equal? (interp (parse simp-fun) top-env) 0)
+2.
+(define fact-fun '(var {[fact = {fact2 x => {if {equal? x 0} 1 {* x {fact2 fact2 {- x 1}}}}}]}
+                       in
+                       {fact fact 3}))
+(check-equal? (top-interp fact-fun) "6")
+
+Code: [(and (real? a-interp) (real? b-interp)) (* (cast (interp a env) Real) (cast (interp b env) Real))] -- t2
+test cases:
+1.
+(check-equal? (parse '{if {equal? "hello" 4} {+ 3 4} {* 3 x}}) (CondC
+                                                                (AppC (IdC 'equal?) (list (StringC "hello") (NumC 4)))
+                                                                (AppC (IdC '+) (list (NumC 3) (NumC 4)))
+                                                                (AppC (IdC '*) (list (NumC 3) (IdC 'x)))))
+
+Code: (and (= (length args-to-values) 2) (equal? s 'equal?)) -- t3
+test cases:
+(check-equal? (interp (AppC (IdC 'equal?) (list (StrC "hello") (StrC "hello"))) top-env) (BoolV true))
+(check-equal? (interp (AppC (IdC 'equal?) (list (LamC '(a) (NumC 1)) (StrC "hello"))) top-env) (BoolV false))
+(check-equal? (interp (AppC (IdC 'equal?) (list (LamC '(a) (NumC 1)) (IdC '+))) top-env) (BoolV false))
+(check-equal? (interp (AppC (IdC 'equal?) (list (StrC "hello") (LamC '(a) (NumC 1)))) top-env) (BoolV false))
+(check-equal? (interp (AppC (IdC 'equal?) (list (IdC '/) (LamC '(a) (NumC 1)))) top-env) (BoolV false))
+(check-equal? (interp (AppC (IdC 'equal?) (list (IdC '-) (IdC '/))) top-env) (BoolV false))
+(check-equal? (interp (AppC (IdC 'equal?) (list (LamC '(a) (NumC 1)) (LamC '(a) (NumC 1)))) top-env) (BoolV false))
+(check-equal? (interp (IfC (AppC (IdC 'equal?) (list (StrC "ur") (StrC "mom")))
+                           (AppC (IdC '-) (list (NumC 5) (NumC 2)))
+                           (AppC (IdC '/) (list (NumC 4) (NumC 2)))) top-env) (NumV 2))
+(check-equal? (interp (IfC (AppC (IdC 'equal?) (list (StrC "mom") (StrC "mom")))
+
+Code: (and (false? (member f '(if in => var))) (not (real? f))) -- t3
 
 3./ -> *
 Code: ['/
@@ -26,33 +69,88 @@ Code: ['/
                 [(equal? b-interp 0) (error 'interp "JILI: divide by zero error")]
                 [else (/ a-interp b-interp)])]
              [else (error 'interp "JILI: invalid args")])]
-          [other (error 'interp "JILI: incorrect number of arguments for /?")])]
-Code: (TyBinding '/ (FuncT (list (NumT) (NumT)) (NumT)))
+          [other (error 'interp "JILI: incorrect number of arguments for /?")])] -- t2
+test cases:
+1. (check-equal? (interp (AppC (IdC '/) (list (NumC 3) (NumC 1))) top-env) 3)
+
+Code: (TyBinding '/ (FuncT (list (NumT) (NumT)) (NumT))) -- t6
+test cases: None
 
 4. <= -> <
-Code: (BoolV (<= num1 num2))
-Code: [(<= leftNum rightNum) #t]
-Code: (<= (NumV-n l) (NumV-n r))
+Code: (BoolV (<= num1 num2)) -- t3
+test cases:
+1. (check-equal? (interp (AppC (IdC '<=) (list (NumC 1) (NumC 2))) top-env) (BoolV true))
+
+Code: [(<= leftNum rightNum) #t] -- t4
+test cases:
+1. (check-equal? (interp (appC (idC 'equal?)
+                            (list (appC (idC '<=) (list (numC 8) (numC 10)))
+                                  (appC (idC '<=) (list (numC 1) (numC 2))))) topEnv) (boolV #t))
+2. (check-equal? (interp (appC (idC 'equal?)
+                            (list (numC 2) (appC (idC '<=) (list (numC 1) (numC 2))))) topEnv) (boolV #f))
+3. (check-equal? (interp (appC (idC 'equal?)
+                            (list (appC (idC '<=) (list (numC 18) (numC 10)))
+                                  (appC (idC '<=) (list (numC 1) (numC 2))))) topEnv) (boolV #f))
+4. (check-equal? (top-interp '{if {<= 5 2} 0 2}) "2")
+5. (check-equal? (top-interp '{if {<= 1 2} 0 1}) "0")
+6. (check-equal? (top-interp '{if {<= 2 1} 0 1}) "1")
+
+Code: (<= (NumV-n l) (NumV-n r)) -- t5
+test cases: 
+1. (check-equal? (top-interp '{{a => {<= 1 0}} 5}) "false")
+2. (check-equal? (top-interp '{{ => {if {<= 2 3} {+ 1 1} 5}}}) "2")
+3. (check-equal? (top-interp '{equal? {<= 4 5} true}) "true")
+4. (check-equal? (top-interp '{if {<= 4 5} {* 1 3} 10}) "3")
+
 Code: (<= (NumV-n (numV-check (interp (first arg) env)))
-                             (NumV-n (numV-check (interp (second arg) env))))
+                             (NumV-n (numV-check (interp (second arg) env)))) -- t6
+test cases:
+1. (check-equal? (interp (AppC (IdC '<=) (list (NumC 5) (NumC 3))) top-level) (BoolV #false))
+2. (check-equal? (interp (AppC (IdC '<=) (list (NumC 1) (NumC 3))) top-level) (BoolV #true)) 
+3. (check-equal? (top-interp '{rec: [square-helper =
+       {proc {[n : num]} : num go
+         {if {<= n 0} 0 {+ n {square-helper {- n 2}}}}}]
+ in
+ {vars: [square : {num -> num}  =
+         {proc {[n : num]} go {square-helper {- {* 2 n} 1}}}]
+  body:
+  {square 13}}}) "169")
+
 Code: ['<= (if (not (and (real? l) (real? r)))
-             (error 'JYSS "args must both be real") (<= l r))]
+             (error 'JYSS "args must both be real") (<= l r))] -- t10
+test cases:
+1. (check-equal? (top-interp '{{proc {} go {if (<= 3 5) 11 5000}} }) "11")
+2. (check-equal? (top-interp
+               '{rec: [square-helper =
+                                     {proc {[n : num]} : num go
+                                           {if {<= n 0} 0 {+ n {square-helper {- n 2}}}}}]
+                      in
+                      {vars: [square : {num -> num}  =
+                                    {proc {[n : num]} go {square-helper {- {* 2 n} 1}}}]
+                            body: {square 13}}})
+              "169")
+3. (check-equal? (interp (ifC (AppC (idC '<=) (list (numC -1) (numC 7))) (idC 'true) (idC 'false)) top-level) #t)
+4. (check-equal? (interp (ifC (AppC (idC '<=) (list (numC 10) (numC 7))) (idC 'true) (idC 'false)) top-level) #f)
 
 5. / -> modulo
-Code: (TyBinding '/ (FuncT (list (NumT) (NumT)) (NumT)))
+Code: (TyBinding '/ (FuncT (list (NumT) (NumT)) (NumT))) -- t6
+test cases: None
 
 6. < -> <=
-Code: (or (< n1 0) (< (string-length s) (+ n2 1)) (> n1 n2))
+Code: (or (< n1 0) (< (string-length s) (+ n2 1)) (> n1 n2)) -- t8
+test cases:
+1. (check-equal? (interp-primop 'substring (list (StrV "hello there") (NumV 3) (NumV 5))) (StrV "lo")) 
 
 7. > -> >=
-Code: (or (< n1 0) (< (string-length s) (+ n2 1)) (> n1 n2))
-
+Code: (or (< n1 0) (< (string-length s) (+ n2 1)) (> n1 n2)) -- t8
+1. (check-equal? (interp-primop 'substring (list (StrV "hello there") (NumV 3) (NumV 5))) (StrV "lo")) 
 
 
 Cannot be caught:
 1. < -> <=
-Code: (or (< (cast (interp a env) Real) (cast (interp b env) Real)) (= (cast (interp a env) Real) (cast (interp b env) Real)))
+Code: (or (< (cast (interp a env) Real) (cast (interp b env) Real)) (= (cast (interp a env) Real)
+                                                                               (cast (interp b env) Real))) -- t2
 
 2.(define-constant-mutator (constant-swap v)
      [(? number?) #:-> (- v)])
-Code: (define err-exp (appC (idC 'hehehe) (list (numC 555) (numC 2))))
+Code: (define err-exp (appC (idC 'hehehe) (list (numC 555) (numC 2)))) -- t4
