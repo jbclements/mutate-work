@@ -138,38 +138,35 @@
     ;; weird to use a logger here at all.
     (match (sync log-receiver)
       [(vector level message (list type from-stx to-stx) logger-topic)
-    ;; print out the message:
-    ; I write to a file and then use python to parse the strings into JSON,
-    ; It's not smart, in any way - CR
-    (define mutation-type (extract-mutation-info))
-    (write (format "/#:NUM MUTANT: ~a:#/" total) out)
-    (write (format "/#:MUTANT USED: ~a:#/" type) out)
-    (write (format "/#:MUTANT SOURCE: ~a:#/" from-stx) out)
-    (write (format "/#:MUTANT TYPE: ~a:#/" mutation-type) out)
-
-      ;  (printf "\n\nMutator used: ~e\n" message)
-      ;  (printf "Mutant source: ~v\n" from-stx)
-    (match-define (list stdout-text stderr-text tests-pass?)
-      (time (subprocess/noinput/timeout 45 (find-executable-path "raco") "test" temp)))
-    (printf "stdout: ~a\n" stdout-text)
-    (printf "stderr: ~a\n" stderr-text)
-
-    (delete-file temp)
-    (define end-time (current-inexact-milliseconds))
-    (+ elapsed-time (- end-time start-time))
-    (define time-diff (/ (- end-time start-time) 1000))
-    (printf "Time taken: ~a\n" time-diff)
-    (printf "Estimated time to run all mutants: ~a\n" (* time-diff total-mutants))
-    (printf "Estimated time remaining: ~a\n" (- (* time-diff total-mutants) elapsed-time))
-    (printf "Tests passed? ~a, \n" tests-pass?)
-
-    (cond 
-      [(equal? tests-pass? 0)
-       (write "MUTANT_RESULT: passed//##::##//" out)]
-      [else
-       (write "MUTANT_RESULT: failed//##::##//" out)])
-    (values (+ failure (if (equal? tests-pass? 0) 0 1))
-            (add1 total))))
+        ;; print out the message:
+        ; I write to a file and then use python to parse the strings into JSON,
+        ; It's not smart, in any way - CR
+        (write (format "/#:NUM MUTANT: ~a:#/" total) out)
+        (write (format "/#:MUTANT USED: ~a:#/" type) out)
+        (write (format "/#:MUTANT SOURCE: ~a:#/" from-stx) out)
+        (write (format "/#:MUTANT TYPE: ~a:#/" mutation-type) out)
+        ; Tests if the tests-pass
+        (match-define (list stdout-text stderr-text tests-pass?)
+          (time (subprocess/noinput/timeout 45 (find-executable-path "raco") "test" temp)))
+        (delete-file temp)
+        ; Just logging information, remove later - CR
+        (define end-time (current-inexact-milliseconds))
+        (+ elapsed-time (- end-time start-time))
+        (define time-diff (/ (- end-time start-time) 1000))
+        (printf "Time taken: ~a\n" time-diff)
+        (printf "Estimated time to run all mutants: ~a\n" (* time-diff total-mutants))
+        (printf "Estimated time remaining: ~a\n" (- (* time-diff total-mutants) elapsed-time))
+        (printf "Tests passed? ~a, \n" tests-pass?)
+        ; Write the results to a file - CR
+        (cond 
+              [(equal? tests-pass? 0)
+              (write "MUTANT_RESULT: passed//##::##//" out)]
+              [else
+              (write "MUTANT_RESULT: failed//##::##//" out)])
+        (values (+ failure (if (equal? tests-pass? 0) 0 1))
+              (add1 total))]
+      [other (error 'message "unexpected log message: ~e" other)])))
+    
 
 (write (~a "\n\n\nMutation score: " (~r score)) out)
 (printf "Mutation score: ~a\n" score)
