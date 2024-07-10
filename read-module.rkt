@@ -7,10 +7,14 @@
 (require syntax/modread
          racket/pretty)
 
+;; given a path referring to a racket file containing a single module,
+;; read the module and return the syntax object
 (define (read-module path)
   (call-with-input-file path
     read-module/port))
 
+
+;; given a port, read a module from it, return it as a syntax object
 (define (read-module/port input-port
                           #:source [source (object-name input-port)])
   (check-module-form
@@ -20,6 +24,11 @@
        (read-syntax source input-port)))
    'ignored source))
 
+;; NB: I think this function is mis-named.
+;; Given a syntax object and a file name, convert the piece of syntax to
+;; a datum, then `read` it again with the new file name.
+;; Actually, I think this function is just all-over dangerous; it's going to
+;; discard all scope information. Um... don't use this function?
 (define (replace-stx-location stx new-file-name)
   (define-values {read-port write-port} (make-pipe))
   (pretty-write (syntax->datum stx) write-port)
