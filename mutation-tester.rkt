@@ -124,7 +124,7 @@
   (for/fold ([failure 0]
              [total 0]
              #:result (/ failure total))
-            ([mutant-stx (get-mutants "test-files/t1.rkt")])
+            ([mutant-stx (get-mutants filepath)])
     (define temp (make-temporary-file  "mutant-~a"))
     ; Add timing information - CR
     (define start-time (current-inexact-milliseconds))
@@ -144,18 +144,22 @@
         (write (format "/#:NUM MUTANT: ~a:#/" total) out)
         (write (format "/#:MUTANT USED: ~a:#/" type) out)
         (write (format "/#:MUTANT SOURCE: ~a:#/" from-stx) out)
-        (write (format "/#:MUTANT TYPE: ~a:#/" mutation-type) out)
+        (write (format "/#:MUTANT DESTINATION: ~a:#/" to-stx) out)
         ; Tests if the tests-pass
         (match-define (list stdout-text stderr-text tests-pass?)
           (time (subprocess/noinput/timeout 45 (find-executable-path "raco") "test" temp)))
         (delete-file temp)
+
+        (printf "STDOUT: ~a\n" stdout-text)
+        (printf "STDERR: ~a\n" stderr-text)
+        (printf "Tests passed? ~a\n" tests-pass?)
         ; Just logging information, remove later - CR
         (define end-time (current-inexact-milliseconds))
         (+ elapsed-time (- end-time start-time))
         (define time-diff (/ (- end-time start-time) 1000))
         (printf "Time taken: ~a\n" time-diff)
-        (printf "Estimated time to run all mutants: ~a\n" (* time-diff total-mutants))
-        (printf "Estimated time remaining: ~a\n" (- (* time-diff total-mutants) elapsed-time))
+        (printf "total ran mutants: ~a\n" total)
+        (printf "Estimated time remaining: ~a\n" (* time-diff (- total-mutants total)))
         (printf "Tests passed? ~a, \n" tests-pass?)
         ; Write the results to a file - CR
         (cond 
@@ -165,7 +169,9 @@
               (write "MUTANT_RESULT: failed//##::##//" out)])
         (values (+ failure (if (equal? tests-pass? 0) 0 1))
               (add1 total))]
-      [other (error 'message "unexpected log message: ~e" other)])))
+      [other
+        (printf "unexpected log message: ~e\n" other)
+        (error 'message "unexpected log message: ~e" other)])))
     
 
 (write (~a "\n\n\nMutation score: " (~r score)) out)
