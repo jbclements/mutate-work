@@ -4,26 +4,68 @@
          mutate
          mutate/traversal
          mutate/logger
-         "./read-module.rkt"
-         )
+         "./read-module.rkt")
+
+(define (get-source-location stx)
+  (let ([source (syntax-source stx)]
+        [line (syntax-line stx)]
+        [column (syntax-column stx)])
+    (format "File: ~a, Line: ~a, Column: ~a" source line column)))
 
 (define stx->mutants
-  (build-mutation-engine
-   #:mutators
-   (define-id-mutator swap-ids
-     [/ #:-> modulo]
-     [/ #:-> *]
-     [not #:-> identity]
-     [and #:<-> or]
-     [when #:<-> unless]
-     [> #:<-> >=]
-     [< #:<-> <=]
-     )
-   (define-simple-mutator (div-swap stx)
-     #:pattern ({~datum /} e1 e2)
-     #' (/ e2 e1))
-   (define-constant-mutator (constant-swap v)
-     [(? number?) #:-> (- v)])
+    (build-mutation-engine
+    #:mutators
+    ; (define-id-mutator swap-ids
+    ;   [/ #:-> modulo]
+    ;   [/ #:-> *]
+    ;   [not #:-> identity]
+    ;   [and #:<-> or]
+    ;   [when #:<-> unless]
+    ;   [> #:<-> >=]
+    ;   [< #:<-> <=])
+    ; (define-simple-mutator (div-swap stx)
+    ;   #:pattern ({~datum /} e1 e2)
+    ;   #' (/ e2 e1))
+    ; (define-constant-mutator (constant-swap v)
+    ;   [(? number?) #:-> (- v)])
+    ;; AOD Mutators
+    (define-simple-mutator (aod-delete-add-take-first stx)
+      #:pattern ({~datum +} e1 e2)
+      #' e1)
+    (define-simple-mutator (aod-delete-sub-take-first stx)
+      #:pattern ({~datum -} e1 e2)
+      #' e1)
+    (define-simple-mutator (aod-delete-mul-take-first stx)
+      #:pattern ({~datum *} e1 e2)
+      #' e1)
+    (define-simple-mutator (aod-delete-div-take-first stx)
+      #:pattern ({~datum /} e1 e2)
+      #' e1)
+    (define-simple-mutator (aod-delete-add-take-second stx)
+      #:pattern ({~datum +} e1 e2)
+      #' e2)
+    (define-simple-mutator (aod-delete-sub-take-second stx)
+      #:pattern ({~datum -} e1 e2)
+      #' e2)
+    (define-simple-mutator (aod-delete-mul-take-second stx)
+      #:pattern ({~datum *} e1 e2)
+      #' e2)
+    (define-simple-mutator (aod-delete-div-take-second stx)
+      #:pattern ({~datum /} e1 e2)
+      #' e2)
+    (define-simple-mutator (rc-take-first-if stx)
+      #:pattern ({~datum if} e1 e2 e3)
+      #' e2)
+    (define-simple-mutator (rc-take-second-if stx)
+      #:pattern ({~datum if} e1 e2 e3)
+      #' e3)
+    ; I dont know why this is not working -CR
+    ; (define-simple-mutator (cond-branch-replace stx)
+    ;   #:pattern (cond clause ...)
+    ;   (for/list ([clause (in-list (syntax->list #'(clause ...)))])
+    ;     (syntax-case clause ()
+    ;       [(_ test result) #'result])))
+
    #:syntax-only
    #:top-level-selector select-define-body
    #:streaming
@@ -32,10 +74,51 @@
 (define (get-mutants p)
   (stx->mutants (read-module p)))
 
-;; create a listener that is interested in all
-;; messages on the fooabc logger with topic 'debug or higher
 (define log-receiver
   (make-log-receiver mutate-logger 'info))
+
+(define filepath
+  (vector-ref (current-command-line-arguments) 0))
+
+(define out
+  (open-output-file "mutant-output.txt" #:exists 'truncate))
+
+(define (extract-mutation-info)
+  (let ([log-entry (sync log-receiver)])
+    (define third-val (vector-ref log-entry 2))
+    (values third-val)))
+
+;; run the given program with the given argument for a maximum of the given number
+;; of seconds, return a list containing the two resulting strings for stdout and stderr
+;; func copied from JC - CR
+(define (subprocess/noinput/timeout timeout-secs prog . args)
+  (define-values (the-subprocess sub-stdout sub-stdin sub-stderr)
+    (apply
+     subprocess #f #f #f 'new
+     prog args))
+  ;; no need to send input to subprocess, close it now:
+  (close-output-port sub-stdin)
+  ;; create the timer thread
+  (define timer-thread (thread (λ () (sleep timeout-secs) 'timeout)))
+  ;; wait for either the timer thread or the subprocess to finish:
+  (define sync-result
+    (time (sync timer-thread the-subprocess)))
+  (when (thread? sync-result)
+    (printf "timeout! must kill subprocess\n")
+    ;; timeout! kill the subprocess
+    (subprocess-kill the-subprocess #f))
+  ;; grab the text from the stdout and stderr pipes
+  (define stdout-text (first (regexp-match #px".*" sub-stdout)))
+  (define stderr-text (first (regexp-match #px".*" sub-stderr)))
+  (close-input-port sub-stdout)
+  (close-input-port sub-stderr)
+  (list stdout-text stderr-text (subprocess-status the-subprocess)))
+
+
+(define mutants (stream->list(get-mutants filepath)))
+(define total-mutants (length mutants))
+(printf "Total mutants: ~a\n" total-mutants)
+(define elapsed-time 0)
 
 (define score
   (for/fold ([failure 0]
@@ -43,9 +126,9 @@
              #:result (/ failure total))
             ([mutant-stx (get-mutants "test-files/t1.rkt")])
     (define temp (make-temporary-file  "mutant-~a"))
-    (write-to-file (syntax->datum mutant-stx)
-                   temp
-                   #:exists 'replace)
+    ; Add timing information - CR
+    (define start-time (current-inexact-milliseconds))
+    (write-to-file (syntax->datum mutant-stx) temp #:exists 'replace)
     ;; the handling of the logger here is weird. All of the
     ;; messages (events) in this queue are already queued before
     ;; the loop starts, generated by get-mutants. This code
@@ -55,30 +138,39 @@
     ;; weird to use a logger here at all.
     (match (sync log-receiver)
       [(vector level message (list type from-stx to-stx) logger-topic)
-       ;; print out the message:
-    
-       (printf "\n\nMutator used: ~e\n" message)
-       (printf "Mutant source: ~v\n" from-stx)
-       (define tests-pass?
-         (system* (find-executable-path "raco")
-                  "test"
-                  temp))
-       (delete-file temp)
-       (values (+ failure (if tests-pass? 0 1))
-               (add1 total))]
-      [other (error 'message "unexpected log message: ~e" other)])))
+    ;; print out the message:
+    ; I write to a file and then use python to parse the strings into JSON,
+    ; It's not smart, in any way - CR
+    (define mutation-type (extract-mutation-info))
+    (write (format "/#:NUM MUTANT: ~a:#/" total) out)
+    (write (format "/#:MUTANT USED: ~a:#/" type) out)
+    (write (format "/#:MUTANT SOURCE: ~a:#/" from-stx) out)
+    (write (format "/#:MUTANT TYPE: ~a:#/" mutation-type) out)
 
+      ;  (printf "\n\nMutator used: ~e\n" message)
+      ;  (printf "Mutant source: ~v\n" from-stx)
+    (match-define (list stdout-text stderr-text tests-pass?)
+      (time (subprocess/noinput/timeout 45 (find-executable-path "raco") "test" temp)))
+    (printf "stdout: ~a\n" stdout-text)
+    (printf "stderr: ~a\n" stderr-text)
 
-(displayln (~a "\n\nMutation score: " (~r score)))
+    (delete-file temp)
+    (define end-time (current-inexact-milliseconds))
+    (+ elapsed-time (- end-time start-time))
+    (define time-diff (/ (- end-time start-time) 1000))
+    (printf "Time taken: ~a\n" time-diff)
+    (printf "Estimated time to run all mutants: ~a\n" (* time-diff total-mutants))
+    (printf "Estimated time remaining: ~a\n" (- (* time-diff total-mutants) elapsed-time))
+    (printf "Tests passed? ~a, \n" tests-pass?)
 
-#;(thread
- (λ ()
-   ;; run infinitely:
-   (let loop ()
-     ;; block until a message is received:
-     (define message
-       (sync log-receiver))
-     ;; print out the message:
-     (printf "\n\nMutator used: ~e" message)
-     ;; continue waiting:
-     (loop))));#
+    (cond 
+      [(equal? tests-pass? 0)
+       (write "MUTANT_RESULT: passed//##::##//" out)]
+      [else
+       (write "MUTANT_RESULT: failed//##::##//" out)])
+    (values (+ failure (if (equal? tests-pass? 0) 0 1))
+            (add1 total))))
+
+(write (~a "\n\n\nMutation score: " (~r score)) out)
+(printf "Mutation score: ~a\n" score)
+(close-output-port out)
