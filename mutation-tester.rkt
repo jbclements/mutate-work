@@ -15,65 +15,61 @@
 (define stx->mutants
     (build-mutation-engine
     #:mutators
-    ; (define-id-mutator swap-ids
-    ;   [/ #:-> modulo]
-    ;   [/ #:-> *]
-    ;   [not #:-> identity]
-    ;   [and #:<-> or]
-    ;   [when #:<-> unless]
-    ;   [> #:<-> >=]
-    ;   [< #:<-> <=])
-    ; (define-simple-mutator (div-swap stx)
-    ;   #:pattern ({~datum /} e1 e2)
-    ;   #' (/ e2 e1))
-    ; (define-constant-mutator (constant-swap v)
-    ;   [(? number?) #:-> (- v)])
-    ;; AOD Mutators
-    (define-simple-mutator (aod-delete-add-take-first stx)
-      #:pattern ({~datum +} e1 e2)
-      #' e1)
-    (define-simple-mutator (aod-delete-sub-take-first stx)
-      #:pattern ({~datum -} e1 e2)
-      #' e1)
-    (define-simple-mutator (aod-delete-mul-take-first stx)
-      #:pattern ({~datum *} e1 e2)
-      #' e1)
-    (define-simple-mutator (aod-delete-div-take-first stx)
-      #:pattern ({~datum /} e1 e2)
-      #' e1)
-    (define-simple-mutator (aod-delete-add-take-second stx)
-      #:pattern ({~datum +} e1 e2)
-      #' e2)
-    (define-simple-mutator (aod-delete-sub-take-second stx)
-      #:pattern ({~datum -} e1 e2)
-      #' e2)
-    (define-simple-mutator (aod-delete-mul-take-second stx)
-      #:pattern ({~datum *} e1 e2)
-      #' e2)
-    (define-simple-mutator (aod-delete-div-take-second stx)
-      #:pattern ({~datum /} e1 e2)
-      #' e2)
-    (define-simple-mutator (rc-take-first-if stx)
-      #:pattern ({~datum if} e1 e2 e3)
-      #' e2)
-    (define-simple-mutator (rc-take-second-if stx)
-      #:pattern ({~datum if} e1 e2 e3)
-      #' e3)
-    ; I dont know why this is not working -CR
-    ; (define-simple-mutator (cond-branch-replace stx)
-    ;   #:pattern (cond clause ...)
-    ;   (for/list ([clause (in-list (syntax->list #'(clause ...)))])
-    ;     (syntax-case clause ()
-    ;       [(_ test result) #'result])))
-
+    (define-simple-mutator (aod-add stx)
+        #:pattern ({~datum +} arg ...)
+        (for/stream ([args (in-list (attribute arg))])
+        #`(begin #,@args)))
+    (define-simple-mutator (aod-minus stx)
+        #:pattern ({~datum -} arg ...)
+        (for/stream ([args (in-list (attribute arg))])
+        #`(begin #,@args)))
+    (define-simple-mutator (aod-mul stx)
+        #:pattern ({~datum *} arg ...)
+        (for/stream ([args (in-list (attribute arg))])
+        #`(begin #,@args)))
+    (define-simple-mutator (aod-div stx)
+        #:pattern ({~datum /} arg ...)
+        (for/stream ([args (in-list (attribute arg))])
+        #`(begin #,@args)))
+    (define-simple-mutator (aod-mod stx)
+        #:pattern ({~datum modulo} arg ...)
+        (for/stream ([args (in-list (attribute arg))])
+        #`(begin #,@args)))
+    ; (define-simple-mutator (aod-minus stx)
+    ;     #:pattern ({~datum -} arg ...)
+    ;     (for/stream ([args (in-permutations (attribute arg))])
+    ;     (first args)))
+    ; (define-simple-mutator (aod-mul stx)
+    ;     #:pattern ({~datum *} arg ...)
+    ;     (for/stream ([args (in-permutations (attribute arg))])
+    ;     (first args)))
+    ; (define-simple-mutator (aod-div stx)
+    ;     #:pattern ({~datum /} arg ...)
+    ;     (for/stream ([args (in-permutations (attribute arg))])
+    ;     (first args)))
+    ; (define-simple-mutator (aod-mod stx)
+    ;     #:pattern ({~datum modulo} arg ...)
+    ;     (for/stream ([args (in-permutations (attribute arg))])
+    ;     (first args)))
+    ; (define-simple-mutator (permute-cond stx)
+    (define-simple-mutator (permute-cond stx)
+        #:pattern ({~datum cond} [tests argses ...] ...)
+        (for/stream ([args (in-list (attribute argses))])
+          #`(begin #,@args)))
+    (define-simple-mutator (take-first-if stx)
+          #:pattern ({~datum if} test then else)
+          #'then)
+    (define-simple-mutator (take-second-if stx)
+          #:pattern ({~datum if} test then else)
+          #'else)
    #:syntax-only
    #:top-level-selector select-define-body
    #:streaming
    #:module-mutator))
-
+(printf "Mutators loaded\n")
 (define (get-mutants p)
   (stx->mutants (read-module p)))
-
+(printf "Mutants generated\n")
 (define log-receiver
   (make-log-receiver mutate-logger 'info))
 
@@ -114,11 +110,14 @@
   (close-input-port sub-stderr)
   (list stdout-text stderr-text (subprocess-status the-subprocess)))
 
-
+; (printf "getting total mutants\n")
 (define mutants (stream->list(get-mutants filepath)))
+; (printf "All the")
 (define total-mutants (length mutants))
-(printf "Total mutants: ~a\n" total-mutants)
+; (printf "Total mutants: ~a\n" total-mutants)
 (define elapsed-time 0)
+
+; (define total-mutants 100)
 
 (define score
   (for/fold ([failure 0]
