@@ -1,0 +1,123 @@
+{
+    "MutationResults": [
+        {
+            "NumMutant": 0,
+            "MutatorType": "permute-cond",
+            "MutantSourceFile": "program3/shuffled-00",
+            "MutantSourceRow": 39,
+            "MutantSourceCol": 2,
+            "MutantSource": "(cond ((and (real? a) (real? b)) (+ a b)))",
+            "MutantDestinationFile": "mutation-tester",
+            "MutantDestinationRow": 58,
+            "MutantDestinationCol": 12,
+            "MutantDestination": "(begin (+ a b))",
+            "Result": "passed"
+        },
+        {
+            "NumMutant": 1,
+            "MutatorType": "aod-add",
+            "MutantSourceFile": "program3/shuffled-00",
+            "MutantSourceRow": 40,
+            "MutantSourceCol": 31,
+            "MutantSource": "(+ a b)",
+            "MutantDestinationFile": "mutation-tester",
+            "MutantDestinationRow": 21,
+            "MutantDestinationCol": 10,
+            "MutantDestination": "(begin . a)",
+            "Result": "failed"
+        },
+        {
+            "NumMutant": 2,
+            "MutatorType": "aod-add",
+            "MutantSourceFile": "program3/shuffled-00",
+            "MutantSourceRow": 40,
+            "MutantSourceCol": 31,
+            "MutantSource": "(+ a b)",
+            "MutantDestinationFile": "mutation-tester",
+            "MutantDestinationRow": 21,
+            "MutantDestinationCol": 10,
+            "MutantDestination": "(begin . b)",
+            "Result": "failed"
+        },
+        {
+            "NumMutant": 3,
+            "MutatorType": "permute-cond",
+            "MutantSourceFile": "program3/shuffled-00",
+            "MutantSourceRow": 47,
+            "MutantSourceCol": 2,
+            "MutantSource": "(cond ((and (real? a) (real? b)) (- a b)))",
+            "MutantDestinationFile": "mutation-tester",
+            "MutantDestinationRow": 58,
+            "MutantDestinationCol": 12,
+            "MutantDestination": "(begin (- a b))",
+            "Result": "passed"
+        },
+        {
+            "NumMutant": 4,
+            "MutatorType": "aod-minus",
+            "MutantSourceFile": "program3/shuffled-00",
+            "MutantSourceRow": 48,
+            "MutantSourceCol": 31,
+            "MutantSource": "(- a b)",
+            "MutantDestinationFile": "mutation-tester",
+            "MutantDestinationRow": 25,
+            "MutantDestinationCol": 10,
+            "MutantDestination": "(begin . a)",
+            "Result": "failed"
+        },
+        {
+            "NumMutant": 5,
+            "MutatorType": "aod-minus",
+            "MutantSourceFile": "program3/shuffled-00",
+            "MutantSourceRow": 48,
+            "MutantSourceCol": 31,
+            "MutantSource": "(- a b)",
+            "MutantDestinationFile": "mutation-tester",
+            "MutantDestinationRow": 25,
+            "MutantDestinationCol": 10,
+            "MutantDestination": "(begin . b)",
+            "Result": "failed"
+        },
+        {
+            "NumMutant": 6,
+            "MutatorType": "permute-cond",
+            "MutantSourceFile": "program3/shuffled-00",
+            "MutantSourceRow": 55,
+            "MutantSourceCol": 2,
+            "MutantSource": "(cond ((and (real? a) (real? b)) (* a b)))",
+            "MutantDestinationFile": "mutation-tester",
+            "MutantDestinationRow": 58,
+            "MutantDestinationCol": 12,
+            "MutantDestination": "(begin (* a b))",
+            "Result": "passed"
+        },
+        {
+            "NumMutant": 7,
+            "MutatorType": "aod-mul",
+            "MutantSourceFile": "program3/shuffled-00",
+            "MutantSourceRow": 56,
+            "MutantSourceCol": 31,
+            "MutantSource": "(* a b)",
+            "MutantDestinationFile": "mutation-tester",
+            "MutantDestinationRow": 29,
+            "MutantDestinationCol": 10,
+            "MutantDestination": "(begin . a)",
+            "Result": "failed"
+        },
+        {
+            "NumMutant": 8,
+            "MutatorType": "aod-mul",
+            "MutantSourceFile": "program3/shuffled-00",
+            "MutantSourceRow": 56,
+            "MutantSourceCol": 31,
+            "MutantSource": "(* a b)",
+            "MutantDestinationFile": "mutation-tester",
+            "MutantDestinationRow": 29,
+            "MutantDestinationCol": 10,
+            "MutantDestination": "(begin . b)",
+            "Result": "failed"
+        }
+    ],
+    "MutationScore": 0.666667,
+    "TestFile": "program3/shuffled-00.rkt"
+}

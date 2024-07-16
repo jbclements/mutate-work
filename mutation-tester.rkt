@@ -146,7 +146,7 @@
         (write (format "/#:MUTANT DESTINATION: ~a:#/" to-stx) out)
         ; Tests if the tests-pass
         (match-define (list stdout-text stderr-text tests-pass?)
-          (time (subprocess/noinput/timeout 45 (find-executable-path "raco") "test" temp)))
+          (time (subprocess/noinput/timeout 10 (find-executable-path "raco") "test" temp)))
         (delete-file temp)
 
         (printf "STDOUT: ~a\n" stdout-text)
