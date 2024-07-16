@@ -11,12 +11,15 @@
    #:mutators
    (define-simple-mutator (permute-cond stx)
      #:pattern ({~datum cond} [tests argses ...] ...)
-     (for/stream ([args (in-list (attribute argses))])
-       #`(begin #,@args)))
+     (bogus-id
+      (for/stream ([args (in-list (attribute argses))])
+        #`(begin #,@args))))
    #:syntax-only
    #:streaming
    #:module-mutator))
- 
+
+(define (bogus-id x) x)
+
 (define program-to-mutate
   #'(module test-program racket
       (#%module-begin
