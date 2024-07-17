@@ -26,6 +26,10 @@ def process_mutation_output(file_path, test_file):
         result_match = result_pattern.search(entry)
         mutant_source_match = mutant_source_pattern.search(entry)
         mutant_destination_match = mutant_destination_pattern.search(entry)
+        alternate_destination = False
+        if mutant_destination_match is None:
+            mutant_destination_match = re.compile(r'"/#:MUTANT DESTINATION: #<syntax (.+?)>:#/"').search(entry)
+            alternate_destination = True
         score_match = score_pattern.search(entry)
         # print(entry)
         # print(num_mutant_match, "num")
@@ -35,7 +39,7 @@ def process_mutation_output(file_path, test_file):
         # print(mutant_destination_match, "destination")
         # print(num_mutant_match and mutator_match and result_match and mutant_source_match and mutant_destination_match, "all")
 
-        if num_mutant_match and mutator_match and result_match and mutant_source_match and mutant_destination_match:
+        if num_mutant_match and mutator_match and result_match and mutant_source_match and mutant_destination_match and not alternate_destination:
             mutation_results.append({
                 "NumMutant": int(num_mutant_match.group(1)),
                 "MutatorType": mutator_match.group(1),
@@ -47,6 +51,20 @@ def process_mutation_output(file_path, test_file):
                 "MutantDestinationRow": int(mutant_destination_match.group(2)),
                 "MutantDestinationCol": int(mutant_destination_match.group(3)),
                 "MutantDestination": mutant_destination_match.group(4),
+                "Result": result_match.group(1)
+            })
+        elif num_mutant_match and mutator_match and result_match and mutant_source_match and mutant_destination_match and alternate_destination:
+            mutation_results.append({
+                "NumMutant": int(num_mutant_match.group(1)),
+                "MutatorType": mutator_match.group(1),
+                "MutantSourceFile": mutant_source_match.group(1),
+                "MutantSourceRow": int(mutant_source_match.group(2)),
+                "MutantSourceCol": int(mutant_source_match.group(3)),
+                "MutantSource": mutant_source_match.group(4),
+                "MutantDestinationFile": mutant_source_match.group(1),
+                "MutantDestinationRow": None,
+                "MutantDestinationCol": None,
+                "MutantDestination": mutant_destination_match.group(1),
                 "Result": result_match.group(1)
             })
 

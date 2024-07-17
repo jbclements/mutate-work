@@ -1,0 +1,84 @@
+{
+    "MutationResults": [
+        {
+            "NumMutant": 0,
+            "MutatorType": "RC-or->false",
+            "MutantSourceFile": "simple",
+            "MutantSourceRow": 9,
+            "MutantSourceCol": 4,
+            "MutantSource": "(or 1 2 3)",
+            "MutantDestinationFile": "simple",
+            "MutantDestinationRow": null,
+            "MutantDestinationCol": null,
+            "MutantDestination": "(or #f 2 3)",
+            "Result": "passed"
+        },
+        {
+            "NumMutant": 1,
+            "MutatorType": "RC-or->false",
+            "MutantSourceFile": "simple",
+            "MutantSourceRow": 9,
+            "MutantSourceCol": 4,
+            "MutantSource": "(or 1 2 3)",
+            "MutantDestinationFile": "simple",
+            "MutantDestinationRow": null,
+            "MutantDestinationCol": null,
+            "MutantDestination": "(or 1 #f 3)",
+            "Result": "passed"
+        },
+        {
+            "NumMutant": 2,
+            "MutatorType": "RC-or->false",
+            "MutantSourceFile": "simple",
+            "MutantSourceRow": 9,
+            "MutantSourceCol": 4,
+            "MutantSource": "(or 1 2 3)",
+            "MutantDestinationFile": "simple",
+            "MutantDestinationRow": null,
+            "MutantDestinationCol": null,
+            "MutantDestination": "(or 1 2 #f)",
+            "Result": "passed"
+        },
+        {
+            "NumMutant": 3,
+            "MutatorType": "RC-or->true",
+            "MutantSourceFile": "simple",
+            "MutantSourceRow": 9,
+            "MutantSourceCol": 4,
+            "MutantSource": "(or 1 2 3)",
+            "MutantDestinationFile": "simple",
+            "MutantDestinationRow": null,
+            "MutantDestinationCol": null,
+            "MutantDestination": "(or #t 2 3)",
+            "Result": "passed"
+        },
+        {
+            "NumMutant": 4,
+            "MutatorType": "RC-or->true",
+            "MutantSourceFile": "simple",
+            "MutantSourceRow": 9,
+            "MutantSourceCol": 4,
+            "MutantSource": "(or 1 2 3)",
+            "MutantDestinationFile": "simple",
+            "MutantDestinationRow": null,
+            "MutantDestinationCol": null,
+            "MutantDestination": "(or 1 #t 3)",
+            "Result": "passed"
+        },
+        {
+            "NumMutant": 5,
+            "MutatorType": "RC-or->true",
+            "MutantSourceFile": "simple",
+            "MutantSourceRow": 9,
+            "MutantSourceCol": 4,
+            "MutantSource": "(or 1 2 3)",
+            "MutantDestinationFile": "simple",
+            "MutantDestinationRow": null,
+            "MutantDestinationCol": null,
+            "MutantDestination": "(or 1 2 #t)",
+            "Result": "passed"
+        }
+    ],
+    "MutationScore": null,
+    "TestFile": "simple.rkt"
+}
